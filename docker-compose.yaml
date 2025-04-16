@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: password123
+      POSTGRES_USER: user123
+      POSTGRES_DB: db123
+
+  backend:
+    container_name: express_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db  # Ensures that the database starts before the backend
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"  # Prometheus web UI
+    depends_on:
+      - backend  # Ensure the backend starts before Prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"  # Grafana web UI
+    depends_on:
+      - prometheus  # Ensure Prometheus starts before Grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Set Grafana admin password
